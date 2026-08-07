@@ -1,0 +1,445 @@
+.bom {
+  --bom-mono: 'SF Mono', 'Cascadia Code', 'Fira Code', ui-monospace, Menlo, Consolas,
+    monospace;
+  --bom-machine-bg: #f3ecdc;
+  --bom-machine-border: #e2d8c2;
+  --bom-marquee-bg: #17171a;
+  --bom-marquee-color: #f5f0e4;
+  --bom-lcd-bg: #17171a;
+  --bom-lcd-color: #f0b429;
+  --bom-reel-bg: #17171a;
+  --bom-reel-window: #ffffff;
+  --bom-reel-h: 64px;
+  --bom-knob: #e5484d;
+  --bom-lever-metal: #a8a29a;
+  --bom-glow: #f6821f;
+  --bom-radius: 14px;
+  position: relative;
+  width: 100%;
+  font-family: var(--bom-mono);
+}
+
+/* ---------- stage (marquee + machine) ---------- */
+
+.bom-stage {
+  position: relative;
+  padding: 0 34px 10px 6px;
+  transform-origin: 50% 0;
+}
+
+.bom-stage--exit {
+  animation: bom-stage-exit 0.42s ease-in forwards;
+}
+
+@keyframes bom-stage-exit {
+  to {
+    opacity: 0;
+    transform: scale(0.92) translateY(14px);
+  }
+}
+
+/* ---------- marquee ---------- */
+
+.bom-marquee {
+  position: relative;
+  z-index: 2;
+  width: 88%;
+  margin: 0 auto -6px;
+  padding: 8px 14px 10px;
+  background: var(--bom-marquee-bg);
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
+}
+
+.bom-marqueeDots {
+  display: flex;
+  justify-content: center;
+  gap: 9px;
+  margin-bottom: 5px;
+}
+
+.bom-marqueeDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  opacity: 0.85;
+}
+
+.bom--rolling .bom-marqueeDot,
+.bom--jackpot .bom-marqueeDot {
+  animation: bom-blink 0.5s linear infinite;
+}
+
+@keyframes bom-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.15;
+  }
+}
+
+.bom-marqueeText {
+  color: var(--bom-marquee-color);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.45em;
+  text-indent: 0.45em;
+}
+
+/* ---------- machine body ---------- */
+
+.bom-machine {
+  position: relative;
+  background: var(--bom-machine-bg);
+  border: 1px solid var(--bom-machine-border);
+  border-radius: var(--bom-radius);
+  padding: 14px 14px 12px;
+  transform: rotate(-1.2deg);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.7) inset,
+    0 10px 24px rgba(31, 26, 12, 0.16);
+  transition: box-shadow 0.25s ease;
+}
+
+.bom--jackpot .bom-machine {
+  box-shadow:
+    0 0 0 3px var(--bom-glow),
+    0 0 28px rgba(246, 130, 31, 0.55),
+    0 10px 24px rgba(31, 26, 12, 0.16);
+  animation: bom-jackpot-wiggle 0.35s ease 2;
+}
+
+@keyframes bom-jackpot-wiggle {
+  0%,
+  100% {
+    transform: rotate(-1.2deg);
+  }
+  25% {
+    transform: rotate(-2.1deg);
+  }
+  75% {
+    transform: rotate(-0.3deg);
+  }
+}
+
+.bom-machineName {
+  margin-bottom: 10px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.35em;
+  text-indent: 0.35em;
+  color: #6f6656;
+}
+
+/* ---------- reels ---------- */
+
+.bom-window {
+  position: relative;
+  display: flex;
+  gap: 10px;
+  padding: 10px 16px;
+  background: var(--bom-reel-bg);
+  border-radius: 10px;
+}
+
+.bom-payline {
+  position: absolute;
+  top: 50%;
+  width: 0;
+  height: 0;
+  border-block: 5px solid transparent;
+  transform: translateY(-50%);
+}
+
+.bom-payline--left {
+  left: 4px;
+  border-left: 6px solid var(--bom-lcd-color);
+}
+
+.bom-payline--right {
+  right: 4px;
+  border-right: 6px solid var(--bom-lcd-color);
+}
+
+.bom-reel {
+  flex: 1;
+  height: var(--bom-reel-h);
+  overflow: hidden;
+  background: var(--bom-reel-window);
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35) inset;
+}
+
+.bom-reelStrip {
+  display: flex;
+  flex-direction: column;
+}
+
+.bom-reelStrip--spinning {
+  animation: bom-spin 0.32s linear infinite;
+  filter: blur(2.5px);
+}
+
+@keyframes bom-spin {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-50%);
+  }
+}
+
+.bom-reelStrip--landed {
+  animation: bom-land 0.4s cubic-bezier(0.2, 0.9, 0.3, 1.25);
+}
+
+@keyframes bom-land {
+  0% {
+    transform: translateY(-55%);
+    filter: blur(2.5px);
+  }
+  70% {
+    transform: translateY(5%);
+    filter: blur(0);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+.bom-reelCell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--bom-reel-h);
+  flex: none;
+}
+
+.bom-reelButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 9px 14px;
+  border-radius: 7px;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ---------- LCD ---------- */
+
+.bom-lcd {
+  margin-top: 10px;
+  padding: 8px 12px;
+  background: var(--bom-lcd-bg);
+  border-radius: 8px;
+  text-align: center;
+  color: var(--bom-lcd-color);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  min-height: 31px;
+}
+
+.bom--rolling .bom-lcd {
+  animation: bom-lcd-pulse 0.7s ease-in-out infinite;
+}
+
+@keyframes bom-lcd-pulse {
+  0%,
+  100% {
+    color: var(--bom-lcd-color);
+  }
+  50% {
+    color: #fff4d6;
+  }
+}
+
+/* ---------- lever ---------- */
+
+.bom-lever {
+  position: absolute;
+  top: 24px;
+  right: -30px;
+  width: 44px;
+  height: 120px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.bom-lever:disabled {
+  cursor: default;
+}
+
+.bom-leverTrack {
+  position: absolute;
+  left: 4px;
+  top: 34px;
+  width: 12px;
+  height: 74px;
+  background: linear-gradient(180deg, #c9c3b8, #8f897e);
+  border-radius: 6px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
+}
+
+.bom-leverArm {
+  position: absolute;
+  left: 7px;
+  bottom: 22px;
+  width: 7px;
+  height: 86px;
+  background: linear-gradient(90deg, #d9d4ca, var(--bom-lever-metal));
+  border-radius: 4px;
+  transform-origin: 50% 100%;
+  transition: transform 0.28s cubic-bezier(0.5, 0, 0.4, 1.4);
+  box-shadow: 1px 2px 4px rgba(0, 0, 0, 0.25);
+}
+
+.bom-lever--pulled .bom-leverArm {
+  transform: rotate(148deg);
+}
+
+.bom-leverKnob {
+  position: absolute;
+  top: -18px;
+  left: 50%;
+  width: 26px;
+  height: 26px;
+  transform: translateX(-50%);
+  background: radial-gradient(circle at 34% 30%, #ff8b8f, var(--bom-knob) 58%, #b32d33);
+  border-radius: 50%;
+  box-shadow: 0 3px 7px rgba(0, 0, 0, 0.35);
+}
+
+.bom-lever:not(:disabled):hover .bom-leverKnob {
+  filter: brightness(1.08);
+}
+
+.bom-lever:focus-visible {
+  outline: 2px solid var(--bom-glow);
+  outline-offset: 3px;
+  border-radius: 10px;
+}
+
+/* ---------- confetti ---------- */
+
+.bom-confetti {
+  position: absolute;
+  inset: -30px 0 0;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.bom-confettiPiece {
+  position: absolute;
+  top: 8%;
+  animation: bom-confetti-fall 1.4s cubic-bezier(0.2, 0.6, 0.6, 1) forwards;
+  opacity: 0;
+}
+
+@keyframes bom-confetti-fall {
+  0% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--bom-tx), var(--bom-ty), 0) rotate(var(--bom-rz));
+  }
+}
+
+/* ---------- revealed ---------- */
+
+.bom-revealed {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  animation: bom-reveal-pop 0.38s cubic-bezier(0.2, 0.9, 0.3, 1.3);
+}
+
+@keyframes bom-reveal-pop {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.bom-winnerButton {
+  width: 100%;
+  padding: 13px 18px;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  transition:
+    filter 0.15s ease,
+    transform 0.05s ease;
+}
+
+.bom-winnerButton:hover {
+  filter: brightness(1.07);
+}
+
+.bom-winnerButton:active {
+  transform: translateY(1px);
+}
+
+.bom-caption {
+  margin: 0;
+  font-size: 11.5px;
+  letter-spacing: 0.02em;
+  color: #8a8a8e;
+}
+
+.bom-reset {
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 11.5px;
+  color: #8a8a8e;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.bom-reset:hover {
+  color: #55555a;
+}
+
+/* ---------- reduced motion ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .bom-reelStrip--spinning {
+    animation-duration: 0.9s;
+    filter: none;
+  }
+  .bom-marqueeDot,
+  .bom-lcd,
+  .bom-machine {
+    animation: none !important;
+  }
+  .bom-confettiPiece {
+    display: none;
+  }
+}

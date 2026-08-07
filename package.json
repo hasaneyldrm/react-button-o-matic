@@ -1,0 +1,57 @@
+{
+  "name": "react-button-o-matic",
+  "version": "0.1.0",
+  "description": "A slot-machine sign-in button for React. Pull the lever, let the reels decide which button variant ships. For science.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Hasan Eyildirim (https://github.com/hasaneyldrm)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hasaneyldrm/react-button-o-matic.git"
+  },
+  "keywords": [
+    "react",
+    "component",
+    "button",
+    "slot-machine",
+    "sign-in",
+    "ab-testing",
+    "fun"
+  ],
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./style.css": "./dist/style.css"
+  },
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview"
+  },
+  "peerDependencies": {
+    "react": ">=17",
+    "react-dom": ">=17"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "typescript": "^5.8.0",
+    "vite": "^7.0.0",
+    "vite-plugin-dts": "^4.5.0"
+  }
+}

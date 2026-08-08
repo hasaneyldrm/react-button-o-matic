@@ -210,6 +210,19 @@
   border-right: 6px solid var(--bom-lcd-color);
 }
 
+.bom--idle .bom-payline {
+  animation: bom-payline-pulse 1.7s ease-in-out infinite alternate;
+}
+
+@keyframes bom-payline-pulse {
+  from {
+    opacity: 0.45;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 .bom-reel {
   flex: 1;
   height: var(--bom-reel-h);
@@ -247,6 +260,23 @@
 
 .bom-reelStrip--blur {
   filter: blur(2.5px);
+}
+
+/* Idle tease: the strip sits centered on its middle cell and drifts a few
+   pixels, peeking the neighboring buttons above and below. */
+.bom-reelStrip--idle {
+  transform: translateY(calc(-1 * var(--bom-reel-h)));
+  animation: bom-idle-bob 3.4s ease-in-out infinite;
+}
+
+@keyframes bom-idle-bob {
+  0%,
+  100% {
+    transform: translateY(calc(-1 * var(--bom-reel-h) + 5px));
+  }
+  50% {
+    transform: translateY(calc(-1 * var(--bom-reel-h) - 5px));
+  }
 }
 
 .bom-reelCell {
@@ -562,6 +592,8 @@
   .bom-lcd,
   .bom-machine,
   .bom-leverKnob,
+  .bom-payline,
+  .bom-reelStrip--idle,
   .bom-winnerButton::after {
     animation: none !important;
   }

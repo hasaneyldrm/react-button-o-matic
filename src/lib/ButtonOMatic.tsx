@@ -376,7 +376,10 @@ export function ButtonOMatic({
               {Array.from({ length: reels }, (_, i) => (
                 <Reel
                   key={i}
+                  index={i}
                   idle={variants[i % variants.length]}
+                  above={variants[(i + variants.length - 1) % variants.length]}
+                  below={variants[(i + 1) % variants.length]}
                   buttonLabel={buttonLabel}
                   landed={landedCount > i}
                   spin={
@@ -452,13 +455,16 @@ interface ReelSpin {
 }
 
 interface ReelProps {
+  index: number
   idle: ButtonOMaticVariant
+  above: ButtonOMaticVariant
+  below: ButtonOMaticVariant
   buttonLabel: string
   landed: boolean
   spin: ReelSpin | null
 }
 
-function Reel({ idle, buttonLabel, landed, spin }: ReelProps) {
+function Reel({ index, idle, above, below, buttonLabel, landed, spin }: ReelProps) {
   const stripRef = useRef<HTMLDivElement>(null)
   const [blurred, setBlurred] = useState(false)
 
@@ -466,7 +472,14 @@ function Reel({ idle, buttonLabel, landed, spin }: ReelProps) {
   // start, long ease-out, slight overshoot so the reel settles with a thunk.
   useLayoutEffect(() => {
     const strip = stripRef.current
-    if (!spin || !strip) return
+    if (!strip) return
+    if (!spin) {
+      // Back to idle: drop the inline styles so the idle bob (class-driven)
+      // takes over again.
+      strip.style.transition = ''
+      strip.style.transform = ''
+      return
+    }
     strip.style.transition = 'none'
     strip.style.transform = 'translateY(0)'
     setBlurred(true)
@@ -500,8 +513,16 @@ function Reel({ idle, buttonLabel, landed, spin }: ReelProps) {
           ))}
         </div>
       ) : (
-        <div className="bom-reelStrip">
+        <div
+          className="bom-reelStrip bom-reelStrip--idle"
+          style={{
+            animationDuration: `${3.1 + index * 0.55}s`,
+            animationDelay: `${index * 0.65}s`,
+          }}
+        >
+          <ReelCell variant={above} buttonLabel={buttonLabel} />
           <ReelCell variant={idle} buttonLabel={buttonLabel} />
+          <ReelCell variant={below} buttonLabel={buttonLabel} />
         </div>
       )}
     </div>

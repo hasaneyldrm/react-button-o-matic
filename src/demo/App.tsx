@@ -86,7 +86,6 @@ export default function App() {
             </label>
 
             <ButtonOMatic
-              persistKey="nimbus-button-o-matic"
               buttonType="submit"
               onReveal={(winner) => console.log('[button-o-matic] winner:', winner.id)}
               onButtonClick={(count) => console.log('[button-o-matic] clicks:', count)}

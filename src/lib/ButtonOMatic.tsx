@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -98,6 +99,12 @@ export const DEFAULT_VARIANTS: ButtonOMaticVariant[] = [
 
 const FESTIVE = ['#ffd166', '#ef476f', '#06d6a0', '#4cc9f0', '#ffffff']
 
+interface SpinPlan {
+  id: number
+  seqs: ButtonOMaticVariant[][]
+  durations: number[]
+}
+
 function resolveText<C>(text: TextOrFn<C>, ctx: C): string {
   return typeof text === 'function' ? text(ctx) : text
 }
@@ -108,6 +115,18 @@ function prefersReducedMotion(): boolean {
     typeof window.matchMedia === 'function' &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches
   )
+}
+
+function randomVariant(
+  variants: ButtonOMaticVariant[],
+  notId?: string,
+): ButtonOMaticVariant {
+  if (variants.length === 1) return variants[0]
+  let v = variants[Math.floor(Math.random() * variants.length)]
+  while (v.id === notId) {
+    v = variants[Math.floor(Math.random() * variants.length)]
+  }
+  return v
 }
 
 interface PersistedState {
@@ -153,9 +172,9 @@ export function ButtonOMatic({
   leverLabel = 'Pull the lever',
   winnerId,
   pickWinner,
-  spinDuration = 1600,
-  reelStagger = 550,
-  jackpotDuration = 1600,
+  spinDuration = 1500,
+  reelStagger = 600,
+  jackpotDuration = 1500,
   confetti = true,
   confettiColors,
   persistKey,
@@ -171,11 +190,13 @@ export function ButtonOMatic({
 }: ButtonOMaticProps) {
   const [phase, setPhase] = useState<ButtonOMaticPhase>('idle')
   const [winner, setWinner] = useState<ButtonOMaticVariant | null>(null)
+  const [spin, setSpin] = useState<SpinPlan | null>(null)
   const [landedCount, setLandedCount] = useState(0)
   const [count, setCount] = useState(0)
   const [leverPulled, setLeverPulled] = useState(false)
   const [machineGone, setMachineGone] = useState(false)
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([])
+  const spinIdRef = useRef(0)
   const restoredRef = useRef(false)
 
   const palette = useMemo(
@@ -218,37 +239,60 @@ export function ButtonOMatic({
         : variants[Math.floor(Math.random() * variants.length)].id)
     const picked = variants.find((v) => v.id === id) ?? variants[0]
     const reduced = prefersReducedMotion()
-    const spin = reduced ? 200 : spinDuration
-    const stagger = reduced ? 60 : reelStagger
-    const hold = reduced ? 400 : jackpotDuration
 
+    // Build a randomized strip per reel: start on the idle face, roll through
+    // a random sequence, land on the winner. Later reels roll longer.
+    const seqs: ButtonOMaticVariant[][] = []
+    const durations: number[] = []
+    for (let i = 0; i < reels; i++) {
+      const idle = variants[i % variants.length]
+      const cells = reduced ? 3 : 12 + i * 6 + Math.floor(Math.random() * 5)
+      const seq: ButtonOMaticVariant[] = [idle]
+      for (let k = 0; k < cells; k++) {
+        seq.push(randomVariant(variants, seq[seq.length - 1].id))
+      }
+      // Make the final snap onto the winner visible.
+      if (seq[seq.length - 1].id === picked.id && variants.length > 1) {
+        seq[seq.length - 1] = randomVariant(variants, picked.id)
+      }
+      seq.push(picked)
+      seqs.push(seq)
+      durations.push(
+        reduced
+          ? 260 + i * 90
+          : spinDuration + i * reelStagger + Math.random() * 220,
+      )
+    }
+    const settle = reduced ? 120 : 430
+    const hold = reduced ? 500 : jackpotDuration
+    const lastLanding = Math.max(...durations)
+
+    spinIdRef.current += 1
+    setSpin({ id: spinIdRef.current, seqs, durations })
     setWinner(picked)
     setPhase('rolling')
     setLandedCount(0)
     setLeverPulled(true)
     onPull?.()
 
-    schedule(() => setLeverPulled(false), 550)
-    for (let i = 0; i < reels; i++) {
-      schedule(() => setLandedCount(i + 1), spin + i * stagger)
-    }
-    const allLanded = spin + (reels - 1) * stagger + 380
+    schedule(() => setLeverPulled(false), 900)
+    durations.forEach((d, i) => schedule(() => setLandedCount(i + 1), d))
     schedule(() => {
       setPhase('jackpot')
       onReveal?.(picked)
-    }, allLanded)
-    schedule(() => setPhase('revealed'), allLanded + hold)
-    schedule(() => setMachineGone(true), allLanded + hold + 450)
+    }, lastLanding + settle)
+    schedule(() => setPhase('revealed'), lastLanding + settle + hold)
+    schedule(() => setMachineGone(true), lastLanding + settle + hold + 480)
   }, [
     phase,
     disabled,
     winnerId,
     pickWinner,
     variants,
+    reels,
     spinDuration,
     reelStagger,
     jackpotDuration,
-    reels,
     onPull,
     onReveal,
     schedule,
@@ -269,6 +313,7 @@ export function ButtonOMatic({
     writePersisted(persistKey, null)
     setPhase('idle')
     setWinner(null)
+    setSpin(null)
     setLandedCount(0)
     setCount(0)
     setLeverPulled(false)
@@ -292,7 +337,6 @@ export function ButtonOMatic({
           ? resolveText(jackpotText, { winner })
           : idleText
 
-  const showMachine = !machineGone && phase !== 'revealed' ? true : !machineGone
   const showRevealed = phase === 'revealed' && winner !== null
 
   const rootClass = [
@@ -306,7 +350,7 @@ export function ButtonOMatic({
 
   return (
     <div className={rootClass} style={style}>
-      {showMachine && (
+      {!machineGone && (
         <div className={`bom-stage${phase === 'revealed' ? ' bom-stage--exit' : ''}`}>
           <div className="bom-marquee" aria-hidden="true">
             <div className="bom-marqueeDots">
@@ -332,15 +376,13 @@ export function ButtonOMatic({
               {Array.from({ length: reels }, (_, i) => (
                 <Reel
                   key={i}
-                  index={i}
-                  variants={variants}
+                  idle={variants[i % variants.length]}
                   buttonLabel={buttonLabel}
-                  winner={winner}
-                  spinning={phase === 'rolling' && landedCount <= i}
-                  landed={
-                    (phase === 'rolling' && landedCount > i) ||
-                    phase === 'jackpot' ||
-                    phase === 'revealed'
+                  landed={landedCount > i}
+                  spin={
+                    spin
+                      ? { id: spin.id, seq: spin.seqs[i], duration: spin.durations[i] }
+                      : null
                   }
                 />
               ))}
@@ -403,32 +445,57 @@ export function ButtonOMatic({
   )
 }
 
-interface ReelProps {
-  index: number
-  variants: ButtonOMaticVariant[]
-  buttonLabel: string
-  winner: ButtonOMaticVariant | null
-  spinning: boolean
-  landed: boolean
+interface ReelSpin {
+  id: number
+  seq: ButtonOMaticVariant[]
+  duration: number
 }
 
-function Reel({ index, variants, buttonLabel, winner, spinning, landed }: ReelProps) {
-  // Two copies of the sequence make the -50% translate loop seamless.
-  const loop = [...variants, ...variants]
-  const idle = variants[index % variants.length]
+interface ReelProps {
+  idle: ButtonOMaticVariant
+  buttonLabel: string
+  landed: boolean
+  spin: ReelSpin | null
+}
+
+function Reel({ idle, buttonLabel, landed, spin }: ReelProps) {
+  const stripRef = useRef<HTMLDivElement>(null)
+  const [blurred, setBlurred] = useState(false)
+
+  // Drive the strip with a single decelerating transform transition: fast
+  // start, long ease-out, slight overshoot so the reel settles with a thunk.
+  useLayoutEffect(() => {
+    const strip = stripRef.current
+    if (!spin || !strip) return
+    strip.style.transition = 'none'
+    strip.style.transform = 'translateY(0)'
+    setBlurred(true)
+    void strip.offsetHeight // flush so the reset applies before the transition
+    const cell = strip.firstElementChild as HTMLElement | null
+    const cellHeight = cell?.offsetHeight ?? 64
+    const target = (spin.seq.length - 1) * cellHeight
+    const raf = requestAnimationFrame(() => {
+      strip.style.transition = `transform ${spin.duration}ms cubic-bezier(0.1, 0.35, 0.08, 1.03)`
+      strip.style.transform = `translateY(${-target}px)`
+    })
+    const unblur = setTimeout(
+      () => setBlurred(false),
+      Math.max(0, spin.duration - 330),
+    )
+    return () => {
+      cancelAnimationFrame(raf)
+      clearTimeout(unblur)
+    }
+  }, [spin?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div className="bom-reel">
-      {landed && winner ? (
-        <div className="bom-reelStrip bom-reelStrip--landed" key={`landed-${winner.id}`}>
-          <ReelCell variant={winner} buttonLabel={buttonLabel} />
-        </div>
-      ) : spinning ? (
+    <div className={`bom-reel${landed ? ' bom-reel--thunk' : ''}`}>
+      {spin ? (
         <div
-          className="bom-reelStrip bom-reelStrip--spinning"
-          style={{ animationDuration: `${0.32 + index * 0.06}s` }}
+          ref={stripRef}
+          className={`bom-reelStrip${blurred ? ' bom-reelStrip--blur' : ''}`}
         >
-          {loop.map((v, i) => (
+          {spin.seq.map((v, i) => (
             <ReelCell key={i} variant={v} buttonLabel={buttonLabel} />
           ))}
         </div>

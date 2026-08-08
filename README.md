@@ -6,6 +6,8 @@ Why A/B test your sign-in button color when a slot machine can decide per visito
 
 Inspired by [this tweet by @joshmanders](https://x.com/joshmanders/status/2085797355366809950) ("What if, and hear me out, Cloudflare... You make it fun?"), itself a reply to a Cloudflare engineer musing about measuring which sign-in button gets clicked the most. Not affiliated with Cloudflare in any way.
 
+**Live demo:** https://hasaneyldrm.github.io/react-button-o-matic/
+
 ## Install
 
 ```bash

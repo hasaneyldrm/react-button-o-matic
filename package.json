@@ -4,6 +4,7 @@
   "description": "A slot-machine sign-in button for React. Pull the lever, let the reels decide which button variant ships. For science.",
   "type": "module",
   "license": "MIT",
+  "homepage": "https://hasaneyldrm.github.io/react-button-o-matic/",
   "author": "Hasan Eyildirim (https://github.com/hasaneyldrm)",
   "repository": {
     "type": "git",
@@ -38,6 +39,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
+    "build:site": "tsc --noEmit && vite build --config vite.config.site.ts",
     "preview": "vite preview"
   },
   "peerDependencies": {
